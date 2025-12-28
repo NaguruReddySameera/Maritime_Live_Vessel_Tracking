@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # SQLite Development - No separate database service needed
+  
+  # Django Backend (Development with SQLite)
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: maritime_backend_dev
+    environment:
+      - DEBUG=True
+      - DJANGO_ENV=development
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - DATABASE_ENGINE=django.db.backends.sqlite3
+      - DATABASE_NAME=/app/db.sqlite3
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend-dev,0.0.0.0
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./logs/backend:/app/logs
+    command: python manage.py runserver 0.0.0.0:8000
+    networks:
+      - maritime_network_dev
+    restart: unless-stopped
+
+  # React Frontend (Development)
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: maritime_frontend_dev
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    networks:
+      - maritime_network_dev
+    restart: unless-stopped
+
+networks:
+  maritime_network_dev:
+    driver: bridge
